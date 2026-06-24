@@ -2,10 +2,10 @@
 package device
 
 type USBDevice struct {
-	Name       string // the Model the device
-	Path       string // the partition path of the device, assumed to be the first and only partition
-	Label      string // the label of the partition, assumed to be the first and only partition
-	Mountpoint string // the mountpoint of the partition, assumed to be the first and only partition
+	Name       string // the Model of the device
+	Path       string // the partition path of the device
+	Label      string // the label of the partition
+	Mountpoint string // the mountpoint of the partition
 }
 
 // FindUSBDevices returns a list of USB devices by running lsblk.
@@ -19,19 +19,21 @@ func FindUSBDevices() ([]USBDevice, error) {
 	for _, bd := range blk.BlockDevices {
 		// filter out non-USB disks
 		if bd.Type == "disk" && bd.Tran == "usb" {
-			// filter out non-partitioned disks
-			if hasPartition(bd) {
-				mp := ""
-				if len(bd.Children[0].Mountpoints) > 0 {
-					mp = bd.Children[0].Mountpoints[0]
+			if len(bd.Children) > 0 {
+				for _, child := range bd.Children {
+					devs = append(devs, USBDevice{
+						Name:       bd.Model,
+						Path:       child.Path,
+						Label:      child.Label,
+						Mountpoint: getMountpoint(child),
+					})
 				}
-				// take the first partition for now
-				// TODO: return multiple partitions from the same device
+			} else {
 				devs = append(devs, USBDevice{
-					bd.Model,
-					bd.Children[0].Path,
-					bd.Children[0].Label,
-					mp,
+					Name:       bd.Model,
+					Path:       bd.Path,
+					Label:      bd.Label,
+					Mountpoint: getMountpoint(bd),
 				})
 			}
 		}
@@ -40,8 +42,13 @@ func FindUSBDevices() ([]USBDevice, error) {
 	return devs, nil
 }
 
-func hasPartition(bd blockDevice) bool {
-	return bd.Children != nil && len(bd.Children) > 0
+func getMountpoint(bd blockDevice) string {
+	for _, mp := range bd.Mountpoints {
+		if mp != "" && mp != "null" {
+			return mp
+		}
+	}
+	return ""
 }
 
 // MountDevice mounts the given USB device using udisksctl and returns the updated device.
