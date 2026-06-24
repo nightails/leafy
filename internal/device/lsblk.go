@@ -19,6 +19,8 @@ type blockDevice struct {
 	Children    []blockDevice `json:"children"`
 }
 
+var execCommand = exec.Command
+
 func readLSBLK() (lsblk, error) {
 	args := []string{
 		"-J",
@@ -26,7 +28,7 @@ func readLSBLK() (lsblk, error) {
 		"-f",
 		"-o", "NAME,PATH,LABEL,TRAN,TYPE,MODEL,MOUNTPOINTS",
 	}
-	cmd := exec.Command("lsblk", args...)
+	cmd := execCommand("lsblk", args...)
 	raw, err := cmd.Output()
 	if err != nil {
 		return lsblk{}, err
