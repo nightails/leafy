@@ -8,7 +8,7 @@ import (
 )
 
 // version of the app. Manually updated.
-const version = "v0.2.1"
+const version = "v0.2.2"
 
 func main() {
 	m := tui.New(version)
