@@ -3,6 +3,7 @@ package device
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 )
@@ -15,7 +16,7 @@ func mountUdisks(device string) (string, error) {
 	var reAlreadyMounted = regexp.MustCompile(`(?i)already mounted at\s+(.+?)\.?\s*$`)
 
 	args := []string{"mount", "-b", device}
-	cmd := execCommand("udisksctl", args...)
+	cmd := exec.Command("udisksctl", args...)
 	cmd.Env = append(os.Environ(), "LC_ALL=C")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -39,7 +40,7 @@ func unmountUdisks(device string) error {
 	var reNotMounted = regexp.MustCompile(`(?i)is not mounted`)
 
 	args := []string{"unmount", "-b", device}
-	cmd := execCommand("udisksctl", args...)
+	cmd := exec.Command("udisksctl", args...)
 	cmd.Env = append(os.Environ(), "LC_ALL=C")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -54,7 +55,7 @@ func unmountUdisks(device string) error {
 // powerOffUdisks safely powers off the given device using udisksctl.
 func powerOffUdisks(device string) error {
 	args := []string{"power-off", "-b", device}
-	cmd := execCommand("udisksctl", args...)
+	cmd := exec.Command("udisksctl", args...)
 	cmd.Env = append(os.Environ(), "LC_ALL=C")
 	_, err := cmd.CombinedOutput()
 	return err

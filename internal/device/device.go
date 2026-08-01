@@ -18,25 +18,36 @@ func FindUSBDevices() ([]USBDevice, error) {
 	devs := make([]USBDevice, 0)
 	for _, bd := range blk.BlockDevices {
 		// filter out non-USB disks
-		if bd.Type == "disk" && bd.Tran == "usb" {
-			if len(bd.Children) > 0 {
-				for _, child := range bd.Children {
-					devs = append(devs, USBDevice{
-						Name:       bd.Model,
-						Path:       child.Path,
-						Label:      child.Label,
-						Mountpoint: getMountpoint(child),
-					})
+		if bd.Type != "disk" || bd.Tran != "usb" {
+			continue
+		}
+
+		if len(bd.Children) > 0 {
+			for _, child := range bd.Children {
+				if child.FSType == "" {
+					continue
 				}
-			} else {
+
 				devs = append(devs, USBDevice{
 					Name:       bd.Model,
-					Path:       bd.Path,
-					Label:      bd.Label,
-					Mountpoint: getMountpoint(bd),
+					Path:       child.Path,
+					Label:      child.Label,
+					Mountpoint: getMountpoint(child),
 				})
 			}
+			continue
 		}
+
+		if bd.FSType == "" {
+			continue
+		}
+
+		devs = append(devs, USBDevice{
+			Name:       bd.Model,
+			Path:       bd.Path,
+			Label:      bd.Label,
+			Mountpoint: getMountpoint(bd),
+		})
 	}
 
 	return devs, nil
