@@ -7,8 +7,8 @@ import (
 	"github.com/nightails/leafy/app/tui"
 )
 
-// version of the app. Manually updated.
-const version = "v0.2.2"
+// Version update with Git Tag
+const version = "dev"
 
 func main() {
 	m := tui.New(version)
