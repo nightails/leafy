@@ -80,8 +80,5 @@ func addFile(list []File, f File, formats []string) []File {
 
 // isSupported returns true if the given File Path has a supported format.
 func isSupported(f File, formats []string) bool {
-	if slices.Contains(formats, strings.ToLower(f.Ext)) {
-		return true
-	}
-	return false
+	return slices.Contains(formats, strings.ToLower(f.Ext))
 }
