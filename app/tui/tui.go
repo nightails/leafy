@@ -91,16 +91,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				tea.Quit,
 			)
 
-		case "x":
-			var selected []medium
-			for _, i := range m.mediaList.Items() {
-				mi := i.(mediumItem)
-				if mi.selected {
-					selected = append(selected, mi.medium)
-				}
-			}
-			return m, deleteFilesCmd(selected)
-
 		case " ":
 			index := m.mediaList.Index()
 			item := m.mediaList.SelectedItem()
@@ -256,7 +246,7 @@ func (m Model) View() string {
 	if m.currStep == copying {
 		h.WriteString("[copying in progress: quitting disabled]")
 	} else {
-		h.WriteString("[j/k] up/down | [space] select | [enter] confirm | [x] delete | [ctrl+c] quit")
+		h.WriteString("[j/k] up/down | [space] select | [enter] confirm | [ctrl+c] quit")
 	}
 	help := style.HelpTextStyle.Render(h.String())
 

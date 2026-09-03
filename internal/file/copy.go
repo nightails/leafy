@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 )
 
 // CopyWithProgress copies a file from src to dst while providing progress updates via the progress callback.
-func CopyWithProgress(src, dst string, progress ProgressFn) error {
+func CopyWithProgress(srcRoot, src, dst string, progress ProgressFn) error {
 	// reserve permission
 	si, err := os.Lstat(src)
 	if err != nil {
@@ -29,11 +30,25 @@ func CopyWithProgress(src, dst string, progress ProgressFn) error {
 		return fmt.Errorf("get atime and mtime: %w", err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dst), 0700); err != nil {
 		return fmt.Errorf("mkdir dst dir: %w", err)
 	}
 
-	in, err := os.Open(src)
+	srcRel, err := filepath.Rel(srcRoot, src)
+	if err != nil {
+		return fmt.Errorf("make source relative: %w", err)
+	}
+	if srcRel == "." || srcRel == ".." || strings.HasPrefix(srcRel, ".."+string(os.PathSeparator)) {
+		return fmt.Errorf("source path escapes root: %s", src)
+	}
+
+	srcRootHandle, err := os.OpenRoot(srcRoot)
+	if err != nil {
+		return fmt.Errorf("open source root: %w", err)
+	}
+	defer srcRootHandle.Close()
+
+	in, err := srcRootHandle.Open(srcRel)
 	if err != nil {
 		return fmt.Errorf("open src: %w", err)
 	}
@@ -42,8 +57,21 @@ func CopyWithProgress(src, dst string, progress ProgressFn) error {
 	}(in)
 
 	// write to a temporary file
-	tmp := dst + ".tmp"
-	out, err := os.OpenFile(tmp, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, si.Mode().Perm())
+	dstDir := filepath.Dir(dst)
+	dstName := filepath.Base(dst)
+	if dstName == "." || dstName == "" {
+		return fmt.Errorf("invalid destination file name: %q", dst)
+	}
+
+	root, err := os.OpenRoot(dstDir)
+	if err != nil {
+		return fmt.Errorf("open destination root: %w", err)
+	}
+	defer root.Close()
+
+	// write to a temporary file
+	tmp := dstName + ".tmp"
+	out, err := root.OpenFile(tmp, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, si.Mode().Perm())
 	if err != nil {
 		return fmt.Errorf("create dst: %w", err)
 	}
@@ -61,7 +89,6 @@ func CopyWithProgress(src, dst string, progress ProgressFn) error {
 	stopProgress()
 
 	syncErr := out.Sync()
-	closeErr := out.Close()
 
 	if copyErr != nil {
 		_ = os.Remove(tmp)
@@ -71,15 +98,15 @@ func CopyWithProgress(src, dst string, progress ProgressFn) error {
 		_ = os.Remove(tmp)
 		return fmt.Errorf("sync: %w", syncErr)
 	}
-	if closeErr != nil {
-		_ = os.Remove(tmp)
-		return fmt.Errorf("close tmp: %w", closeErr)
+
+	if err := out.Close(); err != nil {
+		return fmt.Errorf("close dst: %w", err)
 	}
 
-	if err := os.Rename(tmp, dst); err != nil {
-		_ = os.Remove(dst)
-		return fmt.Errorf("rename tmp to dst: %w", err)
+	if err := root.Rename(tmp, dstName); err != nil {
+		return fmt.Errorf("rename dst: %w", err)
 	}
+
 	if err := os.Chmod(dst, si.Mode().Perm()); err != nil {
 		return fmt.Errorf("chmod dst: %w", err)
 	}

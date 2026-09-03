@@ -13,10 +13,10 @@ type device struct {
 }
 
 type medium struct {
-	name          string
-	format        string
-	src, dest     string
-	copied, total int64
+	name            string
+	format          string
+	root, src, dest string
+	copied, total   int64
 }
 
 type task struct {

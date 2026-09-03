@@ -8,16 +8,30 @@ import (
 	"strings"
 )
 
+var validBlockDevice = regexp.MustCompile(`^/dev/[A-Za-z0-9._/-]+$`)
+
+func validateBlockDevice(device string) error {
+	if !validBlockDevice.MatchString(device) {
+		return fmt.Errorf("invalid block device path: %q", device)
+	}
+	return nil
+}
+
 // mountUdisks mounts the given device using udisksctl and returns the mountpoint.
 func mountUdisks(device string) (string, error) {
+	if err := validateBlockDevice(device); err != nil {
+		return "", err
+	}
+
 	// matches: Mounted /dev/sda1 at /run/media/user/label.
 	var reMounted = regexp.MustCompile(`(?i)Mounted\s+(/dev/\S+)\s+at\s+(.+?)\.?\s*$`)
 	// matches: Error mounting /dev/sda1: ... already mounted at /run/media/user/label.
 	var reAlreadyMounted = regexp.MustCompile(`(?i)already mounted at\s+(.+?)\.?\s*$`)
 
-	args := []string{"mount", "-b", device}
-	cmd := exec.Command("udisksctl", args...)
+	// #nosec G204 -- device path is validated before being passed to udisksctl.
+	cmd := exec.Command("udisksctl", "mount", "-b", device)
 	cmd.Env = append(os.Environ(), "LC_ALL=C")
+
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		// check if already mounted
@@ -37,10 +51,14 @@ func mountUdisks(device string) (string, error) {
 
 // unmountUdisks unmounts the given device using udisksctl.
 func unmountUdisks(device string) error {
+	if err := validateBlockDevice(device); err != nil {
+		return err
+	}
+
 	var reNotMounted = regexp.MustCompile(`(?i)is not mounted`)
 
-	args := []string{"unmount", "-b", device}
-	cmd := exec.Command("udisksctl", args...)
+	// #nosec G204 -- device path is validated before being passed to udisksctl.
+	cmd := exec.Command("udisksctl", "unmount", "-b", device)
 	cmd.Env = append(os.Environ(), "LC_ALL=C")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -54,8 +72,12 @@ func unmountUdisks(device string) error {
 
 // powerOffUdisks safely powers off the given device using udisksctl.
 func powerOffUdisks(device string) error {
-	args := []string{"power-off", "-b", device}
-	cmd := exec.Command("udisksctl", args...)
+	if err := validateBlockDevice(device); err != nil {
+		return err
+	}
+
+	// #nosec G204 -- device path is validated before being passed to udisksctl.
+	cmd := exec.Command("udisksctl", "power-off", "-b", device)
 	cmd.Env = append(os.Environ(), "LC_ALL=C")
 	_, err := cmd.CombinedOutput()
 	return err

@@ -81,6 +81,7 @@ func findMediaCmd(devices []device) tea.Cmd {
 			media = append(media, medium{
 				name:   f.Name,
 				format: f.Ext,
+				root:   f.Root,
 				src:    f.Path,
 				total:  f.Size,
 			})
@@ -102,7 +103,7 @@ func copyMediaCmd(media []medium) tea.Cmd {
 			defer close(ch)
 
 			for i := range media {
-				if err := file.CopyWithProgress(media[i].src, media[i].dest, func(copied, total int64) {
+				if err := file.CopyWithProgress(media[i].root, media[i].src, media[i].dest, func(copied, total int64) {
 					ch <- copyProgressMsg{i, copied, total}
 				}); err != nil {
 					ch <- copyErrorMsg{i, err}
@@ -116,23 +117,6 @@ func copyMediaCmd(media []medium) tea.Cmd {
 		}()
 
 		return copyStartedMsg{ch}
-	}
-}
-
-// deleteFilesCmd deletes given media.
-func deleteFilesCmd(media []medium) tea.Cmd {
-	return func() tea.Msg {
-		if len(media) == 0 {
-			return nil
-		}
-
-		for i := range media {
-			if err := file.Delete(media[i].src); err != nil {
-				return errMsg(err)
-			}
-		}
-
-		return deleteDoneMsg{}
 	}
 }
 
