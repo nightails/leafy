@@ -4,7 +4,11 @@ set -euo pipefail
 
 APP_NAME="leafy"
 DIST_DIR="dist"
-VERSION="${GITHUB_REF_NAME:-$(git describe --tags --exact-match 2>/dev/null || echo "dev")}"
+if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+  VERSION="${GITHUB_REF_NAME}"
+else
+  VERSION="$(git describe --tags --exact-match 2>/dev/null || echo "dev")"
+fi
 
 rm -rf "${DIST_DIR}"
 mkdir -p "${DIST_DIR}"
