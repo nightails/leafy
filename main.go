@@ -8,7 +8,7 @@ import (
 )
 
 // Version update with Git Tag
-const version = "dev"
+var version = "dev"
 
 func main() {
 	m := tui.New(version)
