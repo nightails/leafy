@@ -57,6 +57,7 @@ See the [Development Guide](development.md) for more.
 2. Run `leafy` in a terminal.
 3. Leafy finds and mounts the device, then lists the media files it found.
 4. Select files, type a destination folder, and press `enter` to copy.
+5. When copying ends, Leafy unmounts the device and quits on its own.
 
 The full walkthrough is in the [User Workflow](user-workflow.md) guide.
 

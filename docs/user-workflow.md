@@ -2,7 +2,8 @@
 
 Leafy walks you through one linear flow. It starts by detecting and mounting devices, then moves through four
 interactive steps: **Media selection → Destination → Copying → Finished**. You cannot go back to an earlier step. To
-start over, quit with `ctrl+c` and run Leafy again.
+start over, quit with `ctrl+c` and run Leafy again. Once copying ends, whether it succeeds or fails, Leafy unmounts
+the devices and quits on its own.
 
 ```mermaid
 stateDiagram-v2
@@ -15,9 +16,9 @@ stateDiagram-v2
     Startup --> Error: lsblk / udisksctl / scan failed
     Media --> [*]: ctrl+c (unmount)
     Destination --> [*]: ctrl+c (unmount)
-    Finished --> [*]: ctrl+c (unmount)
+    Finished --> [*]: automatic (unmount)
+    CopyError --> [*]: automatic (unmount)
     Error --> [*]: ctrl+c (unmount)
-    note right of CopyError: ctrl+c is ignored here<br/>(see Known Limitations)
 ```
 
 ## 0. Startup: detect, mount, scan
@@ -94,29 +95,36 @@ REC_0001.WAV 0 B/212.34 MB (0%)
 - Files are copied **one after another**, in the order they were listed.
 - Progress for the active file refreshes about every 150 ms.
 - `ctrl+c` and all other keys are **ignored** while copying, so a transfer cannot be interrupted halfway from the UI.
-- If any file fails, copying stops and the error message replaces the screen. Files copied before the failure stay
-  at the destination.
+- If any file fails, copying stops, the error message replaces the screen, and Leafy exits automatically (see
+  [Exiting](#exiting)). Files copied before the failure stay at the destination.
 
 ## 4. Finished
 
-Once every file is copied, all progress lines read 100%. The help line comes back, and you can press `ctrl+c` to quit.
+Once every file is copied, all progress lines read 100%. Leafy then exits automatically (see [Exiting](#exiting)); no
+key press is needed. The final screen, with the completed progress lines, stays in the terminal.
 
 ## Exiting
 
-`ctrl+c` (outside the copying step) runs these steps:
+Leafy exits in two ways:
+
+- **Automatically**, as soon as the transfer is done, whether it completed or failed.
+- **With `ctrl+c`**, in any step except copying.
+
+Both run these steps:
 
 1. Leafy runs `udisksctl unmount -b <partition>` for **every USB partition it detected**. This includes partitions
    that were already mounted before Leafy started.
 2. The program quits and restores the terminal.
 
-Unmounting runs alongside the quit command, so an unmount error is not shown. The device may still be mounted
-afterwards in that case. Leafy does **not** power off the device; that helper exists in the code but is not used yet.
+On the automatic exit, Leafy waits for unmounting to finish before it quits. If unmounting fails, the unmount error
+is the last thing shown on screen. With `ctrl+c`, unmounting runs alongside the quit command, so an unmount error is
+not shown. Either way, the device may still be mounted afterwards if unmounting failed. Leafy does **not** power off
+the device; that helper exists in the code but is not used yet.
 
 ## Errors
 
 Any error stops the flow and its text replaces the UI body. Examples: `lsblk` failing, `udisksctl` failing to mount, a
-scan error, or a copy error. The only way out is `ctrl+c`, which still tries to unmount the devices.
+scan error, or a copy error.
 
-> ⚠️ If the error happens **during copying**, the app stays in the copying step, and quitting is blocked there. In
-> that case `ctrl+c` has no effect. You have to close the terminal or kill the process (`kill <pid>` from another
-> shell). Then unmount the device yourself, for example with `udisksctl unmount -b /dev/sdX1`.
+- **Copy errors**: Leafy unmounts the devices and exits on its own. The error text stays in the terminal.
+- **Other errors**: the only way out is `ctrl+c`, which still tries to unmount the devices.

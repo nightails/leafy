@@ -54,6 +54,8 @@ If `lsblk` cannot run or returns invalid JSON, the error goes back to the UI as 
   success.
 - On exit, `removeDevicesCmd` unmounts **every** device in `state.devices`, which means every detected USB partition,
   whether Leafy mounted it or not. The first failure stops the loop.
+- Exit happens either automatically when the transfer completes or fails, or when the user presses `ctrl+c`. On the
+  automatic exit, unmounting finishes before the program quits, so an unmount error is shown on the final screen.
 
 ## Power-off (not yet used)
 

@@ -59,7 +59,8 @@ type ProgressFn func(copied, total int64)
 - `startProgressWriter` starts a goroutine with a **150 ms ticker** that calls `progress(copied, total)`. It
   makes one last call when it is stopped, so 100% is always reported. Passing a `nil` callback turns progress off.
 - In the TUI, the callback sends `copyProgressMsg{Index, Copied, Total}` on an unbuffered channel. `copyDoneMsg`
-  marks a file as complete. `copyFinishedMsg` moves the UI to the `finished` step.
+  marks a file as complete. `copyFinishedMsg` moves the UI to the `finished` step, then Leafy unmounts the devices
+  and quits automatically.
 - The view shows each file as `name copied/total (NN%)`.
 
 ## Error handling
@@ -67,7 +68,7 @@ type ProgressFn func(copied, total int64)
 | Failure point               | Result                                                                        |
 |-----------------------------|-------------------------------------------------------------------------------|
 | Any step of a single copy   | Returns a wrapped error (`stat src: …`, `copy: …`, `rename dst: …`, etc.)     |
-| In the TUI                  | The worker sends `copyErrorMsg` and **stops**. Remaining files are skipped and the error is shown |
+| In the TUI                  | The worker sends `copyErrorMsg` and **stops**. Remaining files are skipped, the error is shown, and Leafy unmounts the devices and quits automatically |
 | Already-copied files        | Stay at the destination                                                       |
 
 See [Known Limitations](../known-limitations.md) for edge cases in error cleanup.

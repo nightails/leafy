@@ -37,7 +37,7 @@ chmod +x leafy
     - Press `enter` to confirm your selection and proceed.
 4.  **Destination Selection**: Enter the path where you want to copy the files (supports `~` for home directory).
 5.  **Transferring**: The app copies the selected files to the destination with a real-time progress bar.
-6.  **Exiting**: Press `ctrl+c` to exit. This will automatically unmount the devices that were mounted by the app.
+6.  **Exiting**: Once the transfer completes or fails, the app automatically unmounts the devices that were mounted by the app and exits. You can also press `ctrl+c` to exit before copying starts.
 
 ## 🤝 Contributing
 

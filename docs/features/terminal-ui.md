@@ -31,6 +31,8 @@ Copying Progress:                 step >= copying
 - If `m.err` is set, only the header and the error text are shown, with no help line.
 - The help line reads `[j/k] up/down | [space] select | [enter] confirm | [ctrl+c] quit`. While copying, it changes
   to `[copying in progress: quitting disabled]`.
+- When the transfer completes or fails, the program quits on its own. The last frame (completed progress lines or the
+  error text) stays in the terminal.
 
 ## Media checklist
 

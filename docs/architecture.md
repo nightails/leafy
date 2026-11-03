@@ -120,8 +120,8 @@ sequenceDiagram
         C-->>M: msg (update copied/total)
     end
     W-->>M: copyFinishedMsg → step = finished
-    Note over M: user presses ctrl+c
-    M->>C: removeDevicesCmd + tea.Quit
+    Note over M: exits automatically (also on copyErrorMsg)
+    M->>C: tea.Sequence(removeDevicesCmd, tea.Quit)
 ```
 
 ### Copy progress pipeline
@@ -138,6 +138,10 @@ listener command:
 5. After the last file, the worker sends `copyFinishedMsg{}` and closes the channel. A closed channel also maps to
    `copyFinishedMsg`.
 6. On failure, the worker sends `copyErrorMsg` and stops. `Update` stores the error and stops listening.
+7. Both `copyFinishedMsg` and `copyErrorMsg` end the program. `Update` returns
+   `tea.Sequence(removeDevicesCmd(devices), tea.Quit)`, so the devices are unmounted **before** the program quits. An
+   unmount failure (`errMsg`) is stored in `m.err` and appears in the final frame. Neither handler re-arms the listener,
+   so the duplicate `copyFinishedMsg` from the closed channel is never read.
 
 ## Domain packages
 

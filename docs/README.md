@@ -36,7 +36,8 @@ in this repository.
 - **Safe transfer**: writes to a `.tmp` file first, `fsync`s it, then renames it atomically. Permissions and
   access/modification times are preserved.
 - **Live progress**: shows copied bytes and percentage for each file, updated every 150 ms.
-- **Clean exit**: `ctrl+c` unmounts the USB partitions Leafy detected. Quitting is blocked while a copy is running.
+- **Clean exit**: when the transfer completes or fails, Leafy unmounts the USB partitions it detected and quits on its
+  own. `ctrl+c` does the same in the other steps. Quitting is blocked while a copy is running.
 
 ## High-level workflow
 
@@ -48,6 +49,6 @@ flowchart LR
     D --> E[Select files<br/>space / enter]
     E --> F[Enter destination path<br/>enter]
     F --> G[Copy with progress]
-    G --> H[Finished]
-    H --> I[ctrl+c: unmount & quit]
+    G --> H[Finished or failed]
+    H --> I[Auto: unmount & quit]
 ```
