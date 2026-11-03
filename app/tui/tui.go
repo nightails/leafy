@@ -187,11 +187,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case copyErrorMsg:
 		m.err = msg.Err
-		return m, nil
+		return m, tea.Sequence(removeDevicesCmd(m.state.devices), tea.Quit)
 
 	case copyFinishedMsg:
 		m.currStep = finished
-		return m, nil
+		return m, tea.Sequence(removeDevicesCmd(m.state.devices), tea.Quit)
 
 	case deleteDoneMsg:
 		m.mediaList.SetItems(nil)
