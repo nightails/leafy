@@ -1,6 +1,6 @@
 module github.com/nightails/leafy
 
-go 1.25
+go 1.27.3
 
 require (
 	github.com/charmbracelet/bubbles v0.21.1
